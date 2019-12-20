@@ -1,10 +1,11 @@
-import React, {useState, Fragment} from 'react';
+import React, {useState, useEffect, Fragment} from 'react';
 
 const purple = { background: "purple" }
+const purpleText = { color: "rgba(126, 0, 114, .7)" }
 
-function Cita({cita}){
+function Cita({cita, index, eliminarCita}){
   return(
-    <div className="uk-card uk-card-default uk-card-body uk-width-1-2@m mt-2">
+    <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m mb-2">
       <div className="uk-card-badge uk-label" style={purple}>{cita.fecha} | {cita.hora}</div>
       <br/>
       <h3 className="uk-card-title"><span role="img" aria-label="leg">🐾</span> {cita.mascota}</h3>
@@ -13,6 +14,12 @@ function Cita({cita}){
       <p>{cita.propietario}</p>
       <h6>Sintomas:</h6>
       <p>{cita.sintomas}</p>
+      <button 
+        className="btn btn-sm text-white"
+        style={purple}
+        title="Eliminar"
+        onClick={() => eliminarCita(index)}
+      >X</button>
     </div>
   )
 }
@@ -28,7 +35,7 @@ function Formulario({crearCita}){
   }
 
   const [cita, actualizarCita] = useState(stateInicial)
-
+  
   const actualizarState = e =>{
 
     actualizarCita({
@@ -42,22 +49,34 @@ function Formulario({crearCita}){
   const enviarCita = e =>{
 
     e.preventDefault()
-    console.log(cita)
-    crearCita(cita)
 
-    actualizarCita({
-      mascota: '',
-      propietario: '',
-      fecha: '',
-      hora: '',
-      sintomas: ''
-    })
+    const { mascota, propietario, fecha, hora, sintomas } = cita
+
+    if(mascota && propietario && fecha && hora && sintomas){
+
+      console.log(cita)
+      crearCita(cita)
+
+      actualizarCita({
+        mascota: '',
+        propietario: '',
+        fecha: '',
+        hora: '',
+        sintomas: ''
+      })
+
+      return
+    
+    }
+    
+    alert("Campos vacios")
 
   }
 
   return(
     <Fragment>
       <form
+        className="shadow p-3 rounded"
         onSubmit={enviarCita}
       >
 
@@ -128,7 +147,7 @@ function Formulario({crearCita}){
             </textarea>
           </div>
         </div>
-
+        
         <input type="submit" className="btn text-white btn-block" style={purple} value="Agregar"/>
 
       </form>
@@ -137,8 +156,16 @@ function Formulario({crearCita}){
 }
 
 function App() {
+
+  let citasIniciales = JSON.parse(localStorage.getItem('citas'))
+
+  if(!citasIniciales){
+     
+    citasIniciales=[]
+    
+  }
   
-  const [citas, guardarCitas] = useState([])
+  const [citas, guardarCitas] = useState(citasIniciales)
 
   const crearCita = cita => {
 
@@ -148,6 +175,31 @@ function App() {
     guardarCitas(nuevasCitas)
 
   }
+
+  const eliminarCita = index =>{
+
+    const nuevasCitas = [...citas]
+    nuevasCitas.splice(index, 1)
+    guardarCitas(nuevasCitas)
+    
+  }
+
+  //LocalStorage
+  useEffect(() => {
+
+    let citasIniciales = JSON.parse(localStorage.getItem('citas'))
+
+    if(citasIniciales){
+     
+      localStorage.setItem('citas', JSON.stringify(citas))
+    
+    }else{
+      localStorage.setItem('citas', JSON.stringify([]))
+    }
+  
+  }, [citas])
+
+  const titulo = Object.keys(citas).length === 0 ? 'No hay citas' : 'Lista de citas'
   
   return (
     <Fragment>
@@ -156,17 +208,19 @@ function App() {
       </nav>
       <div className="container">
         <div className="row">
-        <div className="col-sm-12 col-md-5 shadow m-3 p-3">
+        <div className="col-sm-12 col-md-5 m-3 p-2">
             <Formulario
               crearCita={crearCita}
             />
           </div>
-          <div className="col-sm-12 col-md-5 m-3 p-3">
+          <div className="col-sm-12 col-md-5 m-3">
+            <h2 style={purpleText}>{titulo}</h2>
             {citas.map((cita, index) => (
               <Cita
                 key={index}
                 index={index}
                 cita={cita}
+                eliminarCita={eliminarCita}
               />
             ))}
           </div>
